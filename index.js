@@ -60,14 +60,9 @@ class Game {
     if (this.outOfBounds(coords)) return;
 
     const { x, y } = coords;
-    try {
-      this.grid[x][y] = '*';
-      this.alives.push(coords);
+    this.grid[x][y] = '*';
+    this.alives.push(coords);
 
-    } catch (err) {
-      console.log(coords);
-      console.error(err);
-    }
   }
 
   isAlive(coords) {
@@ -75,12 +70,7 @@ class Game {
 
     if (this.outOfBounds(coords)) return ' ';
 
-    try {
-      return this.grid[x][y] === '*';
-    } catch (err) {
-      console.log(x, y);
-      console.error(err);
-    }
+    return this.grid[x][y] === '*';
   }
 
   countPop(coords) {
