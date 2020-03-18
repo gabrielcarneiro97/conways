@@ -1,1 +1,1 @@
-# conways-js
+# conways
