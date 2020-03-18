@@ -68,7 +68,7 @@ class Game {
   isAlive(coords) {
     const { x, y } = coords;
 
-    if (this.outOfBounds(coords)) return ' ';
+    if (this.outOfBounds(coords)) return false;
 
     return this.grid[x][y] === '*';
   }
