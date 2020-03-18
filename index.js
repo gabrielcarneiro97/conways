@@ -22,10 +22,6 @@ class Coords {
       downright: new Coords(this.x + 1, this.y - 1),
     };
   }
-
-  equals(coords) {
-    return this.x === coords.x && this.y === coords.y;
-  }
 }
 
 class Game {
@@ -62,14 +58,12 @@ class Game {
     const { x, y } = coords;
     this.grid[x][y] = '*';
     this.alives.push(coords);
-
   }
 
   isAlive(coords) {
     const { x, y } = coords;
 
     if (this.outOfBounds(coords)) return false;
-
     return this.grid[x][y] === '*';
   }
 
@@ -83,12 +77,8 @@ class Game {
     const pop = this.countPop(coords);
     const isAlive = this.grid[x][y] === '*';
 
-    if (isAlive && (pop === 2 || pop === 3)) {
-      return '*';
-    } else if (!isAlive && pop === 3) {
-      return '*';
-    }
-
+    if (isAlive && (pop === 2 || pop === 3)) return '*';
+    if (!isAlive && pop === 3) return '*';
     return ' ';
   }
 
@@ -96,7 +86,6 @@ class Game {
     const { alives } = this;
 
     const newGame = new Game(this.size);
-
 
     alives.forEach((coords) => {
       const all = {
