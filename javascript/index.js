@@ -18,7 +18,7 @@ class Coords {
       right: new Coords(this.x + 1, this.y),
       upleft: new Coords(this.x - 1, this.y + 1),
       upright: new Coords(this.x + 1, this.y + 1),
-      downletf: new Coords(this.x - 1, this.y - 1),
+      downleft: new Coords(this.x - 1, this.y - 1),
       downright: new Coords(this.x + 1, this.y - 1),
     };
   }
