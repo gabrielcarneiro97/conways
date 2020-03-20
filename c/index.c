@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 // #include <unistd.h>
+#define GRID_SIZE 1000
 
 void clear() {
   printf("\e[1;1H\e[2J");
@@ -15,7 +16,7 @@ typedef struct {
   int y;
 } Coords;
 
-Coords new_Coords(int x, int y) {
+Coords newCoords(int x, int y) {
   Coords new;
   new.x = x;
   new.y = y;
@@ -23,156 +24,129 @@ Coords new_Coords(int x, int y) {
   return new;
 }
 
-Coords *Coords_getNear(Coords coords, Coords *arr) {
+void *getNear(Coords coords, Coords **near) {
   int x = coords.x;
   int y = coords.y;
 
-  arr = (Coords *) malloc(sizeof(Coords) * 8);
+  *near = (Coords *) malloc(sizeof(Coords) * 8);
 
-
-  arr[0] = new_Coords(x, y + 1);
-  arr[1] = new_Coords(x, y - 1);
-  arr[2] = new_Coords(x - 1, y);
-  arr[3] = new_Coords(x + 1, y);
-  arr[4] = new_Coords(x - 1, y + 1);
-  arr[5] = new_Coords(x + 1, y + 1);
-  arr[6] = new_Coords(x - 1, y - 1);
-  arr[7] = new_Coords(x + 1, y - 1);
-
-  return arr;
+  *near[0] = newCoords(x, y + 1);
+  *near[1] = newCoords(x, y - 1);
+  *near[2] = newCoords(x - 1, y);
+  *near[3] = newCoords(x + 1, y);
+  *near[4] = newCoords(x - 1, y + 1);
+  *near[5] = newCoords(x + 1, y + 1);
+  *near[6] = newCoords(x - 1, y - 1);
+  *near[7] = newCoords(x + 1, y - 1);
 }
 
-typedef struct {
-  char **grid;
-  Coords *alives;
-  int alives_size;
-  int size;
-} Game;
-
-int Game_outOfBounds(Game game, Coords coords) {
+int OFB(Coords coords) {
   int x = coords.x;
   int y = coords.y;
 
   if (x < 0 || y < 0) return 1;
-  if (x >= game.size || y >= game.size) return 1;
+  if (x >= GRID_SIZE || y >= GRID_SIZE) return 1;
 
   return 0;
 }
 
-Game Game_addToAlives(Game game, Coords coords) {
-  if (Game_outOfBounds(game, coords) == 0) {
-    game.alives_size += 1;
-    if (game.alives_size == 1) {
-      game.alives = (Coords*) malloc(sizeof(Coords) * game.alives_size);
+void addToAlives(Coords **alives, int *alivesSize, Coords coords) {
+  if (OFB(coords) == 0) {
+    *alivesSize += 1;
+    if (*alivesSize == 1) {
+      *alives = (Coords*) malloc(sizeof(Coords) * (*alivesSize));
     } else {
-      game.alives = (Coords*) realloc(game.alives, sizeof(Coords) * game.alives_size);
+      *alives = (Coords*) realloc(*alives, sizeof(Coords) * (*alivesSize));
     }
-    game.alives[game.alives_size - 1] = coords;
+    *alives[(*alivesSize) - 1] = coords;
   }
-  return game;
 }
 
-Game Game_toAlive(Game game, Coords coords) {
-  if (Game_outOfBounds(game, coords) == 0) {
-    game = Game_addToAlives(game, coords);
-    game.grid[coords.x][coords.y] = '*';
+void toAlive(Coords **alives, int *alivesSize, char **state, Coords coords) {
+  if (OFB(coords) == 0) {
+    addToAlives(alives, alivesSize, coords);
+    state[coords.x][coords.y] = '*';
   }
-
-  return game;
 }
 
-int Game_isAlive(Game game, Coords coords) {
+int isAlive(char **state, Coords coords) {
   int x = coords.x;
   int y = coords.y;
 
-  if (Game_outOfBounds(game, coords) == 1) return 0;
-  if (game.grid[x][y] == '*') return 1;
+  if (OFB(coords) == 1) return 0;
+  if (state[x][y] == '*') return 1;
   return 0;
 }
 
-int Game_countPop(Game game, Coords coords) {
+int countPop(char **state, Coords coords) {
   Coords *near;
 
-  near = Coords_getNear(coords, near);
+  getNear(coords, &near);
 
   int pop = 0;
 
   for (int i = 0; i < 8; i += 1) {
-    pop += Game_isAlive(game, near[i]);
+    pop += isAlive(state, near[i]);
   }
 
   return pop;
 }
 
-char Game_cellNextState(Game game, Coords coords) {
+char cellNextState(char **state, Coords coords) {
   int x = coords.x;
   int y = coords.y;
-  int pop = Game_countPop(game, coords);
-  int isAlive = Game_isAlive(game, coords);
+  int pop = countPop(state, coords);
+  int alive = isAlive(state, coords);
 
-  if (isAlive == 1 && (pop == 2 || pop == 3)) return '*';
-  if (isAlive == 0 && pop == 3) return '*';
+  if (alive == 1 && (pop == 2 || pop == 3)) return '*';
+  if (alive == 0 && pop == 3) return '*';
   return ' ';
 }
 
-Game new_Game(int size, int random) {
-  Game game;
-  game.grid = (char**) malloc(size * sizeof(char*));
-  game.size = size;
-  game.alives_size = 0;
-
-  for (int x = 0; x < size; x += 1) {
-    game.grid[x] = (char*) malloc(size * sizeof(char));
-    for (int y = 0; y < size; y += 1) {
-      if (random == 1 && randRange(0, 100) < 30) {
-        game = Game_toAlive(game, new_Coords(x, y));
-      } else game.grid[x][y] = ' ';
-    }
-  }
-
-  return game;
-}
-
-void delete_Game(Game game) {
-  free(game.grid);
-  free(game.alives);
-}
-
-Game Game_nextState(Game game) {
-  Coords *alives = game.alives;
-  int alives_size = game.alives_size;
-
-  Game newGame = new_Game(game.size, 0);
-
-  for (int i = 0; i < alives_size; i += 1) {
+void nextState(Coords *alives, int alivesSize, char **state, char ***nextState, Coords **nextAlives, int *nextAlivesSize) {
+  for (int i = 0; i < alivesSize; i += 1) {
     Coords coords = alives[i];
     Coords *near;
 
-    near = Coords_getNear(coords, near);
+    getNear(coords, &near);
 
     Coords here = coords;
 
     for (int j = -1; j < 8; j += 1) {
       if (j > 0) here = near[j];
 
-      char hereNext = Game_cellNextState(game, here);
+      char hereNext = cellNextState(state, here);
 
-      if (hereNext == '*' && Game_isAlive(game, here) == 0) {
-        newGame = Game_toAlive(newGame, here);
+      if (hereNext == '*' && isAlive(state, here) == 0) {
+        toAlive(nextAlives, nextAlivesSize, state, here);
       }
     }
   }
-
-  return newGame;
 }
 
-void Game_print(Game game, Coords start, Coords end) {
+void print(char **state, Coords start, Coords end) {
   clear();
   for (int x = start.x; x < end.x; x += 1) {
     for (int y = start.y; y < end.y; y += 1) {
-      printf("%c", game.grid[x][y]);
+      printf("%c", state[x][y]);
     }
     printf("\n");
+  }
+}
+
+void empty(char ***state, Coords **alives, int *alivesSize, int random) {
+  *state = (char**) malloc(GRID_SIZE * sizeof(char*));
+  *alivesSize = 0;
+
+  for (int x = 0; x < GRID_SIZE; x += 1) {
+    printf("%d\n", x);
+    (*state)[x] = (char*) malloc(GRID_SIZE * sizeof(char));
+    printf("%p\n", *state[x]);
+    // for (int y = 0; y < GRID_SIZE; y += 1) {
+    //   if (random == 1 && randRange(0, 100) < 30) {
+    //     toAlive(alives, alivesSize, *state, newCoords(x, y));
+    //   } else *state[x][y] = ' ';
+    // }
   }
 }
 
@@ -181,15 +155,24 @@ int main() {
   int x = 22;
   int y = 80;
 
-  Coords start = new_Coords(offset, offset);
-  Coords end = new_Coords(x + offset, y + offset);
+  Coords start = newCoords(offset, offset);
+  Coords end = newCoords(x + offset, y + offset);
 
-  Game game = new_Game(1000, 1);
+  char **state;
+  Coords *alives;
+  int alivesSize = 10;
 
-  while(1) {
-    Game_print(game, start, end);
-    // delete_Game(game);
-    game = Game_nextState(game);
-    sleep(1);
-  }
+  printf("antes: %p\n", state);
+  empty(&state, &alives, &alivesSize, 1);
+  printf("depois: %p\n", state);
+  // print(state, start, end);
+
+
+  // while(1) {
+  //   print(game, start, end);
+  //   // delete_Game(game);
+  //   sleep(1);
+  // }
+
+  return 0;
 }
